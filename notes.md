@@ -25,3 +25,19 @@ ls /var/run/reboot-required 2>/dev/null && echo "STILL NEEDED" || echo "No reboo
 - fail2ban on Debian 13 reads from the journal, not from /var/log/auth.log.
 - Check journal size: `journalctl --disk-usage`
 - Check log file sizes: `du -sh /var/log/*`
+
+## CrowdSec — decided against, for now
+Single-WP-site VPS. Existing baseline (key-only SSH, UFW, fail2ban,
+patches) covers the realistic threats. CrowdSec adds complexity that
+isn't justified at this scale.
+
+Will revisit if:
+- More sites land on this VPS (multi-tenant)
+- Attack volume in nginx logs becomes notable
+- Need it as a portfolio piece
+
+Higher-ROI WordPress-specific protections to add when we install nginx:
+- fail2ban jail for wp-login.php and xmlrpc.php
+- Disable XML-RPC if unused
+- A WP security plugin (Wordfence / Limit Login Attempts)
+- 2FA on admin accounts
