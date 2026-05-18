@@ -41,3 +41,19 @@ Higher-ROI WordPress-specific protections to add when we install nginx:
 - Disable XML-RPC if unused
 - A WP security plugin (Wordfence / Limit Login Attempts)
 - 2FA on admin accounts
+
+## PHP-FPM pool config — the two identities
+
+A pool has TWO independent identity settings:
+
+1. user/group = identity of the PHP worker processes
+   → controls what files PHP can read/write
+   → set to the site user (`usld`) for per-site isolation
+
+2. listen.owner/listen.group = ownership of the Unix socket file
+   → controls who can SEND requests to FPM
+   → set to `www-data` because that's the user nginx runs as
+
+They are unrelated. Think of it as:
+- user/group = the chef's identity (what ingredients they can use)
+- listen.owner = who can knock on the kitchen door
