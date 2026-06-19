@@ -48,3 +48,25 @@ Then `ssh usld-vps` brings up the tunnel automatically.
 This is the model we use for ANY future internal admin UI (Grafana,
 monitoring dashboards, status pages): bind to 127.0.0.1, reach via
 SSH tunnel. Never on the public internet.
+
+
+## website files exportation 
+zip -r wordpress.zip wordpress/
+unzip archive.zip
+
+## database
+sudo mariadb
+CREATE DATABASE usldunkerque CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE USER 'usldunkerque'@'localhost' IDENTIFIED BY '<PASTE_GENERATED_PASSWORD>';
+
+GRANT ALL PRIVILEGES ON usldunkerque.* TO 'usldunkerque'@'localhost';
+
+FLUSH PRIVILEGES;
+
+## wp cli
+
+curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+chmod +x wp-cli.phar
+sudo mv wp-cli.phar /usr/local/bin/wp
+

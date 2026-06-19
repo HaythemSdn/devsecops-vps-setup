@@ -113,3 +113,15 @@ to the shared /var/www/letsencrypt/ directory.
 
 Include the snippet in every port-80 vhost (real sites AND catch-all)
 so the challenge works no matter which vhost handles the request.
+
+## SSH `-i` flag (identity file)
+
+`-i <path>` tells ssh/scp/sftp/rsync-via-ssh which private key to use.
+
+Used when:
+- The key isn't in a default location (~/.ssh/id_ed25519, ~/.ssh/id_rsa)
+- You want a dedicated key for a specific purpose (migration, deploy, automation)
+
+Default behavior (no -i): SSH tries all keys in ~/.ssh/ until one is accepted.
+
+Persistent equivalent: ~/.ssh/config entry with IdentityFile + IdentitiesOnly.

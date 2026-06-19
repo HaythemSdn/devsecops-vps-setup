@@ -14,6 +14,15 @@ Listens on :80 by default. Welcome page served.
 ```bash
 sudo apt install mariadb-server
 sudo mariadb-secure-installation
+
+'Switch to unix_socket authentication [Y/n] n
+Change the root password? [Y/n] n
+Remove anonymous users? [Y/n] Y
+Disallow root login remotely? [Y/n] Y 
+Remove test database and access to it? [Y/n] Y
+Reload privilege tables now? [Y/n] Y
+'
+
 sudo mariadb -e "SELECT user, host, plugin FROM mysql.user;"
 sudo mariadb -e "SHOW DATABASES;"
 ```

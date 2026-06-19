@@ -13,6 +13,11 @@ sudo apt install certbot
 
 ## ACME challenge plumbing
 - Shared webroot: /var/www/letsencrypt/ (owned by www-data)
+```bash
+  sudo mkdir -p /var/www/letsencrypt
+  sudo chown www-data:www-data /var/www/letsencrypt
+  sudo chmod 755 /var/www/letsencrypt
+  ```
 - Snippet at /etc/nginx/snippets/letsencrypt-acme-challenge.conf
 - Included in every port-80 vhost AND the catch-all
 
@@ -22,8 +27,25 @@ sudo certbot certonly \
   --webroot --webroot-path /var/www/letsencrypt \
   --rsa-key-size 4096 \
   -d usld.preprod-mpl.com \
-  --agree-tos --no-eff-email -m <email>
+  --agree-tos --no-eff-email -m haythem@nouslagence.com
 ```
+```bash
+sudo nano /etc/ssl/certs/dhparam.pem
+```
+
+-----BEGIN DH PARAMETERS-----
+MIICCAKCAgEAuWF0/FIvVVG8rQnQaMBwUtVzv0A57Cw0R4Soqe2Ixn6SlUpHbqaS
+uydPQTkttCOKVsx4D1QSUVu6EY6zxp3fXenNKK3qWBxxahYq8cLD/8HT87oOIO3d
+lWaZ77rFgHAz00q11GQbO6Ycuf5RWosWgHy4i+gtVh22Nd7ax0akBM2q6njyIctx
+HpEddltmryCACBbUaLuRJAecmbRmyxcmB1UDOikUAH6/XT4uBCsnDfsR/sub+efi
+AGs879/1n1tCI3oWZkLvznM2T3dNoQoZdHGRrOWUShTau8kuPX9GMWr/AsgwjVik
+0MxWapjrjq7gTrfZJAXd+277IhljD97N6p3OtSpXRt3A1HMICVELHchTmD4Dw5rH
+9M1Z6qv1/78MpnTzQHXv0VMIoxFuQ4Ux9jCvj3jnNh+7MOx4CQh95k+g3E6ojvnx
+y5w8ERCqeN7OwGjqIV1LNQ7MAQ1w26k5le4pRFvyO1kb41+0wHBrN97IMUjoEy4T
+OOqj8GbnxfOGgX0jTCksWyTThNmRIAkextSUVyqawOBV7Gb+md8f0DZ5DG464T1d
+3BPl/zX6cXhkB8WMtpxt0k9/g5o3fTOwSGrX3s3XJk4daAFkJDx2dNuM9KF16tYM
+zZxlEQswQPba9/iAH/ZCMEhbHJeTlUXstHc3gydXBqU+r+2UMZJnD1sCAQI=
+-----END DH PARAMETERS-----
 
 ## Renewal — automatic via systemd timer
 ```bash
