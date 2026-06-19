@@ -1,0 +1,22 @@
+# Step 14 — External uptime monitoring
+
+## Why
+First monitoring tier: know within minutes if a site goes down.
+External service so it works even if the VPS is completely unreachable.
+
+## Tool
+UptimeRobot, free plan
+- Up to 50 monitors
+- 5-min check interval
+- Email alerts
+
+## Monitors configured
+- `https://www.usldunkerque.com` — HTTPS check, 5-min interval, email alert
+
+## Verified
+- Monitor shows green "Up" in dashboard
+- Test email received
+
+## Account
+- Login email: <your-email>
+- Password stored in: <password manager reference>

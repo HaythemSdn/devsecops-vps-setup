@@ -1,0 +1,175 @@
+# Step 15 — Mail relay (postfix → Brevo)
+
+## Why
+Foundation for server-side alerts. Without working outbound mail,
+unattended-upgrades / certbot / cron scripts / WordPress contact forms
+all fail silently.
+
+## Provider
+Brevo (formerly Sendinblue) — free tier 300 emails/day, plenty for alerts.
+
+## 1. Sign up at Brevo
+- In dashboard → SMTP & API → SMTP tab
+- Note the credentials they provide:
+  - SMTP server: smtp-relay.brevo.com
+  - Port: 587
+  - Login: your Brevo login email
+  - SMTP key (master password)
+
+## 2. Install postfix and dependencies
+
+```bash
+sudo apt install postfix mailutils libsasl2-modules
+```
+
+During the installer:
+- "General type of mail configuration" → **Internet Site with smarthost**
+- "System mail name" → use the VPS hostname or main site domain
+- "SMTP relay host" → **leave blank** (we configure it below)
+
+
+# Step 16 — Certbot renewal alerts
+## 3. Create the credentials file
+
+```bash
+sudo nano /etc/postfix/sasl_passwd
+```
+
+One line:
+[smtp-relay.brevo.com]:587    <brevo-login>:<brevo-smtp-key>
+
+Replace `<brevo-login>` and `<brevo-smtp-key>` with your real values.
+
+Brackets around the hostname matter. Separator between host and user is
+whitespace. Separator between user and password is a single colon.
+
+## 4. Lock down permissions and compile to hash format
+
+```bash
+sudo chmod 600 /etc/postfix/sasl_passwd
+sudo postmap /etc/postfix/sasl_passwd
+sudo chmod 600 /etc/postfix/sasl_passwd.db
+sudo ls -la /etc/postfix/sasl_passwd*
+```
+
+Expected: two files, both `-rw-------` owned by `root:root`.
+
+## 5. Configure postfix
+
+```bash
+sudo postconf -e "relayhost = [smtp-relay.brevo.com]:587"
+sudo postconf -e "smtp_sasl_auth_enable = yes"
+sudo postconf -e "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd"
+sudo postconf -e "smtp_sasl_security_options = noanonymous"
+sudo postconf -e "smtp_tls_security_level = encrypt"
+sudo postconf -e "smtp_sasl_tls_security_options = noanonymous"
+sudo systemctl reload postfix
+```
+
+Verify:
+
+```bash
+sudo postconf relayhost smtp_sasl_auth_enable smtp_sasl_password_maps smtp_tls_security_level
+```
+
+## 6. Send a test email
+
+```bash
+echo "Test from $(hostname) at $(date)" | mail -s "Mail relay test" you@example.com
+mailq
+sudo journalctl -u postfix --since "1 minute ago" --no-pager
+```
+
+Expected:
+- `mailq` returns "Mail queue is empty"
+- journalctl shows `status=sent (250 ... OK ...)`
+- The email arrives in your inbox (check spam)
+
+## Lessons
+- "No worthy mechs found" → install `libsasl2-modules`
+- OVH's `smtp.vps.ovh.net` relay is deprecated — DNS resolution fails
+- Once mail works, WordPress's queued contact-form emails start flowing
+  too — set this up before debugging "WP doesn't send mail" issues
+- Don't paste SMTP credentials in screenshots/repos; they go in
+  /etc/postfix/sasl_passwd with mode 600
+
+
+# Certbot renewal alerts
+
+Edit the certbot config:
+
+```bash
+sudo nano /etc/letsencrypt/cli.ini
+```
+
+Add these two lines at the end:
+email = haythem@nouslagence.com
+no-eff-email = True
+
+## Behavior
+- Certbot emails ONLY on errors (default — no success spam)
+- Let's Encrypt independently emails the same address when a cert is
+  20 / 10 / 7 days from expiring without renewal (defense in depth)
+
+# Unattended-upgrades alerts
+
+```bash
+sudo nano /etc/apt/apt.conf.d/50unattended-upgrades
+```
+
+Uncomment and edit:
+
+Unattended-Upgrade::Mail "haythem@nouslagence.com";
+Unattended-Upgrade::MailReport "only-on-error";
+
+# Daily disk-space check
+
+## Create the script
+
+```bash
+sudo nano /etc/cron.daily/disk-check
+```
+
+Content:
+
+```bash
+#!/bin/sh
+THRESHOLD=85
+EMAIL=haythem@nouslagence.com
+
+USAGE=$(df / | awk 'NR==2 {print $5}' | tr -d '%')
+
+if [ "$USAGE" -gt "$THRESHOLD" ]; then
+    df -h | mail -s "Disk usage at ${USAGE}% on $(hostname)" "$EMAIL"
+fi
+```
+## Make it executable
+
+```bash
+sudo chmod +x /etc/cron.daily/disk-check
+```
+
+## Verify
+
+```bash
+ls -la /etc/cron.daily/disk-check
+sudo /etc/cron.daily/disk-check
+```
+
+## Test the alert path
+
+Temporarily lower threshold to force an email:
+
+```bash
+sudo sed -i 's/^THRESHOLD=85/THRESHOLD=1/' /etc/cron.daily/disk-check
+sudo /etc/cron.daily/disk-check
+sudo sed -i 's/^THRESHOLD=1/THRESHOLD=85/' /etc/cron.daily/disk-check
+```
+
+You'll receive an email subject "Disk usage at XX% on <hostname>".
+Confirm receipt, then verify threshold is back to 85.
+
+## Behavior
+- Runs once daily via `/etc/cron.daily/` (no separate cron entry needed)
+- Below 85%: silent
+- Above 85%: emails full `df -h` output
